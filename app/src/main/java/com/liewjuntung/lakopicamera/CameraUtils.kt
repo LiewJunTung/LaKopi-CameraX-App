@@ -121,3 +121,20 @@ enum class ASPECT_RATIO(val numerator: Int, val denominator: Int) {
     RATIO_16_9(16, 9),
     RATIO_4_3(4, 3)
 }
+
+/*
+ cameraX(this) {
+            facing = CameraX.LensFacing.BACK
+            preview {
+                aspectRatio = ASPECT_RATIO.RATIO_16_9
+                width = 1280
+                height = 720
+                onPreviewOutputUpdateListener = previewListener
+            }
+            imageAnalysis {
+                width = 1280
+                height = 720
+                analyzer = imageAnalyser
+            }
+        }
+ */

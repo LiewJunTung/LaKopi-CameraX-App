@@ -84,6 +84,7 @@ class MainActivity : AppCompatActivity() {
 
         val analyzerConfig = ImageAnalysisConfig.Builder().apply {
             setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
+            setTargetResolution(Size(620, 480))
             setLensFacing(lensFacing)
         }.build()
         val imageAnalysis = ImageAnalysis(analyzerConfig).apply {
