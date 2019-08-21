@@ -57,8 +57,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         val analyzerConfig = ImageAnalysisConfig.Builder().apply {
-            val analyzerThread = HandlerThread("ImageAnalysis").apply { start() }
-            setCallbackHandler(Handler(analyzerThread.looper))
             setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
             setLensFacing(lensFacing)
         }.build()
@@ -76,7 +74,12 @@ class MainActivity : AppCompatActivity() {
                             )
                         ).apply {
                             addOnSuccessListener { labels ->
-                                appbar.title = labels.first().text
+                                if (labels.size > 0){
+                                    appbar.title = labels.first().text
+                                    textView.text = labels.joinToString("\n", limit = 3) {
+                                        "${it.text}: ${it.confidence}%"
+                                    }
+                                }
                             }
                             addOnFailureListener { e ->
                                 Log.e("imageAnalysis", e.message, e)
