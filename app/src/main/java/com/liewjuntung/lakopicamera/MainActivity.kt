@@ -41,52 +41,53 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val previewListener = Preview.OnPreviewOutputUpdateListener {
+        view_finder.surfaceTexture = it.surfaceTexture
+    }
+    private val imageAnalyser =
+        ImageAnalysis.Analyzer { imageProxy: ImageProxy, _: Int ->
+            imageProxy.image?.apply image@{
+                val currentTimestamp = System.currentTimeMillis()
+                if (currentTimestamp - lastAnalyzedTimestamp >= TimeUnit.SECONDS.toMillis(1)) {
+                    labeler.processImage(
+                        FirebaseVisionImage.fromMediaImage(
+                            this@image,
+                            FirebaseVisionImageMetadata.ROTATION_90
+                        )
+                    ).apply {
+                        addOnSuccessListener { labels ->
+                            if (labels.size > 0) {
+                                appbar.title = labels.first().text
+                                textView.text = labels.joinToString("\n", limit = 3) {
+                                    "${it.text}: ${it.confidence}%"
+                                }
+                            }
+                        }
+                        addOnFailureListener { e ->
+                            Log.e("imageAnalysis", e.message, e)
+                        }
+                    }
+                    lastAnalyzedTimestamp = currentTimestamp
+                }
+            }
+        }
+
     private fun startCamera() {
         val previewConfig = PreviewConfig.Builder().apply {
             setTargetAspectRatio(Rational(16, 9))
             setTargetResolution(Size(1280, 720))
             setLensFacing(CameraX.LensFacing.BACK)
         }.build()
-
         val preview = Preview(previewConfig).apply {
-            onPreviewOutputUpdateListener = Preview.OnPreviewOutputUpdateListener {
-                view_finder.surfaceTexture = it.surfaceTexture
-            }
+            onPreviewOutputUpdateListener = previewListener
         }
 
         val analyzerConfig = ImageAnalysisConfig.Builder().apply {
             setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
             setLensFacing(lensFacing)
         }.build()
-
         val imageAnalysis = ImageAnalysis(analyzerConfig).apply {
-            analyzer = ImageAnalysis.Analyzer { imageProxy: ImageProxy, rotationDegree: Int ->
-                imageProxy.image?.apply image@{
-                    val currentTimestamp = System.currentTimeMillis()
-                    // Calculate the average luma no more often than every second
-                    if (currentTimestamp - lastAnalyzedTimestamp >= TimeUnit.SECONDS.toMillis(1)) {
-                        labeler.processImage(
-                            FirebaseVisionImage.fromMediaImage(
-                                this@image,
-                                FirebaseVisionImageMetadata.ROTATION_90
-                            )
-                        ).apply {
-                            addOnSuccessListener { labels ->
-                                if (labels.size > 0){
-                                    appbar.title = labels.first().text
-                                    textView.text = labels.joinToString("\n", limit = 3) {
-                                        "${it.text}: ${it.confidence}%"
-                                    }
-                                }
-                            }
-                            addOnFailureListener { e ->
-                                Log.e("imageAnalysis", e.message, e)
-                            }
-                        }
-                        lastAnalyzedTimestamp = currentTimestamp
-                    }
-                }
-            }
+            analyzer = imageAnalyser
         }
 
         CameraX.bindToLifecycle(this, preview, imageAnalysis)
@@ -109,9 +110,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Check if all permission specified in the manifest have been granted
-     */
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(
             baseContext, it
