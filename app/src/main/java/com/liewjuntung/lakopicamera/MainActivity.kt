@@ -3,8 +3,6 @@ package com.liewjuntung.lakopicamera
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Handler
-import android.os.HandlerThread
 import android.util.Log
 import android.util.Rational
 import android.util.Size
