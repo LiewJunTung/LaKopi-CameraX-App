@@ -3,9 +3,12 @@ package com.liewjuntung.lakopicamera
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.HandlerThread
 import android.util.Log
 import android.util.Rational
 import android.util.Size
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -20,6 +23,8 @@ import java.util.concurrent.TimeUnit
 
 private const val REQUEST_CODE_PERMISSIONS = 10
 private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
+private val analyzerThread = HandlerThread("FirebaseAnalysis").apply { start() }
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,6 +47,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val previewListener = Preview.OnPreviewOutputUpdateListener {
+        Log.d("MA", "surface init")
+        val parent = view_finder.parent as ViewGroup
+        parent.removeView(view_finder)
+        parent.addView(view_finder, 0)
         view_finder.surfaceTexture = it.surfaceTexture
     }
     private val imageAnalyser =
@@ -86,6 +95,7 @@ class MainActivity : AppCompatActivity() {
             setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
             setTargetResolution(Size(620, 480))
             setLensFacing(lensFacing)
+            setCallbackHandler(Handler(analyzerThread.looper))
         }.build()
         val imageAnalysis = ImageAnalysis(analyzerConfig).apply {
             analyzer = imageAnalyser
